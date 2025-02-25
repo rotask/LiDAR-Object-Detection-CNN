@@ -5,7 +5,7 @@ from scipy.ndimage import gaussian_filter,uniform_filter
 
 
 
-# Step 1: Load the data from 'image.txt'
+# Step 1: Load the data from 'image_updated.txt'
 def load_data_from_file(file_path):
     with open(file_path, 'r') as file:
         # Read lines, strip leading and trailing whitespace, and remove brackets
@@ -15,7 +15,7 @@ def load_data_from_file(file_path):
     return np.array(data)
 
 # Adjust the path if necessary
-file_path = 'image.txt'
+file_path = 'data/image_updated.txt'
 image = load_data_from_file(file_path)
 
 

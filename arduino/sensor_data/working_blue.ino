@@ -1,5 +1,5 @@
 #include <RPLidar.h>
-#include <Arduino_PortentaBreakout.h>
+#include "Arduino_PortentaBreakout_updated.h"
 RPLidar lidar;
 // Define UART and Serial baud rates
 #define LIDAR_BAUD_RATE 115200  // Example baud rate for RP1 LiDAR

@@ -1,8 +1,12 @@
 import os
 import re
-prefix = 'bottle'
+
+# Define the prefix variable to match the new file name
+prefix = 'data'
+
+# Function to find the highest number following the prefix in the .txt files
 def find_highest_cap_number(folder_path, prefix):
-    # Regex pattern to match files starting with 'cap' followed by numbers
+    # Regex pattern to match files starting with the prefix followed by numbers
     pattern = re.compile(rf'^{re.escape(prefix)}(\d+)\.txt$')
 
     highest_number = -1
@@ -19,5 +23,4 @@ def find_highest_cap_number(folder_path, prefix):
 # Specify the path to your folder
 folder_path = 'data'
 highest_cap_number = find_highest_cap_number(folder_path, prefix)
-print(f"The highest number following 'cap' in the .txt files is: {highest_cap_number}")
-
+print(f"The highest number following '{prefix}' in the .txt files is: {highest_cap_number}")

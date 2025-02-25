@@ -1,4 +1,4 @@
-from train_model import get_model
+from train_model_updated import get_model
 import tensorflow as tf
 
 # Use the get_model function to get the trained model
