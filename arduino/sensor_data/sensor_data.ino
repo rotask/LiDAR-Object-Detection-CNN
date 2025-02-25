@@ -1,10 +1,8 @@
-// Include necessary libraries
 #include <Arduino.h>
 #include <RPLidar.h> // For LiDAR sensor operations
 #include <Servo.h>   // For servo control
-// #include <TensorFlowLite.h> // For TensorFlow Lite operations
 #include "tflite_model.h" // TensorFlow Lite model definitions
-#include "model_data.cc"  // Model data, the trained model parameters
+#include "model_data_updated.cc"  // Model data, the trained model parameters
 
 // Define constants for baud rates and the RPLIDAR motor control pin
 #define LIDAR_BAUD_RATE 115200 // Baud rate for RP1 LiDAR communication

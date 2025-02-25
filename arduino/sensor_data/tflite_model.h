@@ -1,4 +1,4 @@
-#include "model_data.cc" // Include the model data
+#include "model_data_updated.cc" // Include the model data
 
 
 // #define NUMBER_OF_INPUTS (140*61) //8540   // replace 'x' with the actual number of inputs for your model
@@ -35,6 +35,3 @@ void loop() {
     // Delay for a second for readability
     delay(1000);
 }
-
-
-

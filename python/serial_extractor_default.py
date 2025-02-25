@@ -2,7 +2,9 @@ import serial
 import os
 import re
 
-obj_name = 'bottle'
+# Define the prefix variable to match the new file name
+obj_name = 'data'
+
 def find_highest_data_number(folder_path, prefix):
     # Regex pattern to match files starting with 'cap' followed by numbers
     pattern = re.compile(rf'^{re.escape(prefix)}(\d+)\.txt$')
