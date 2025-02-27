@@ -6,6 +6,8 @@ The Ashla AML Lab Project is dedicated to creating a LiDAR-based system that can
 
 Our approach includes advanced deep learning algorithms to achieve effective object detection. This document outlines our methodology, including data collection, processing techniques, and the key components that bring our project to life.
 
+![Hardware](dagu.png)
+
 ## Key Features
 
 - **LiDAR Scanning:** Utilize RPLIDAR A1 for comprehensive 360° environmental scans.
