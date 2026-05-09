@@ -1,53 +1,148 @@
-# AML Lab Project - Team Ashla 2023/24 - Imperial College London
+# LiDAR-Based Object Classification on a Self-Navigating Robot
 
-## Overview
+> Imperial College London · Applied Machine Learning Lab · 2023/24
+> **Team Ashla** — Berk Bilgin, Konstantinos Rotas, Ahmed Safiyanu, Alexander White
 
-The Ashla AML Lab Project is dedicated to creating a LiDAR-based system that can identify and classify everyday household objects such as coffee cups, bottles, and hats. This project is designed to support visually impaired individuals by integrating this technology into a self-navigating robot. Utilizing the RPLIDAR A1, our system can perform 360° high-resolution scans, capturing detailed 3D models of the environment and the objects within it.
+![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15-FF6F00?logo=tensorflow&logoColor=white)
+![Keras](https://img.shields.io/badge/Keras-2.15-D00000?logo=keras&logoColor=white)
+![Arduino](https://img.shields.io/badge/Arduino-Portenta%20H7-00979D?logo=arduino&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
-Our approach includes advanced deep learning algorithms to achieve effective object detection. This document outlines our methodology, including data collection, processing techniques, and the key components that bring our project to life.
+A LiDAR-based system that classifies household objects (bottles, caps, mugs) in real time, mounted on a self-navigating robot. A 2D RPLIDAR A1 was modified with a tilt servo to produce a 61×140 single-channel depth image, which a small CNN classifies. The trained model runs as TensorFlow Lite for Microcontrollers on an Arduino Portenta H7.
+
+> **Headline result:** 97% validation accuracy on a 3-class classification task (bottles vs caps vs mugs) with 213K-parameter CNN trained on 300 LiDAR scans. Real-time classification streamed over Bluetooth (HC-05) to a host PC.
+
+---
+
+## Hardware
+
+| Component | Role |
+| --- | --- |
+| RPLIDAR A1 | 360° 2D laser range scanner, modified into a tilting 3D scan head |
+| Arduino Portenta H7 Lite | Main MCU — controls scanning, motors, ultrasonic sensors, runs TFLite inference |
+| Servo motor | Tilts the LiDAR vertically across 144 angular positions per scan |
+| HC-05 Bluetooth module | Streams scan data to a host PC for training; later replaced by on-device inference |
+| Ultrasonic sensors | Obstacle detection for autonomous navigation |
+| DAGU Wild Thumper 4WD | Mobile chassis |
 
 ![Hardware](dagu.png)
 
-## Key Features
+---
 
-- **LiDAR Scanning:** Utilize RPLIDAR A1 for comprehensive 360° environmental scans.
-- **Machine Learning:** Implement various machine learning techniques for accurate object detection and classification.
-- **Practical Implementation:** Focus on the real-world applicability of the system, ensuring it can be easily integrated into a self-navigating robot.
+## Dataset
 
-## System Components
+3 classes × 100 samples = **300 LiDAR scans**, plus 12 wall scans used as negative examples (excluded from the train/val split).
 
-- **RPLIDAR A1:** For high-resolution LiDAR scanning.
-- **Arduino:** Acts as the central processing unit, managing data collection and device control.
-- **Sensors:** Various sensors for additional data input and navigation.
-- **Dagu Wild Thumper 4WD:** The motor system providing mobility to the prototype.
-- **Machine Learning Models:** Custom-built models trained on LiDAR scans and 3D models for object recognition.
+| Property | Value |
+| --- | --- |
+| Sample shape | 61 × 140 (1 channel — depth) |
+| Encoding | Distance per pixel; near = dark, far = light. Object edges show as black (0) due to laser diffraction at object borders — preserved as a feature, not filtered out |
+| Diversity | 10 distinct instances per class, scanned at multiple positions and orientations |
+| Train / val split | 75 / 25, random seed 42, single shuffled split (no held-out test set due to dataset size) |
+| Augmentation | Horizontal flip + random translation |
+| Normalisation | Global max across the dataset |
 
-## Getting Started
+---
 
-### Prerequisites
+## Model
 
-Before starting, ensure you have the following:
+A small CNN, deliberately sized to fit comfortably on the Portenta H7 Lite when converted to TensorFlow Lite for Microcontrollers.
 
-- RPLIDAR A1
-- Arduino (with appropriate shields for connectivity)
-- Dagu Wild Thumper 4WD chassis (or similar)
-- Basic electronic components (wires, sensors, etc.)
+```
+Input              (140, 61, 1)
+Conv2D(16, 3×3, ReLU, batchnorm, same)
+MaxPool(2,2)
+Conv2D(32, 3×3, ReLU, batchnorm, same)
+MaxPool(2,2)
+Flatten
+Dense(3, softmax)
 
-### Installation
+Total params : 213,315 (833 KB)
+Optimizer    : Adam
+Loss         : categorical cross-entropy
+Init         : Xavier / Glorot uniform
+Epochs       : 60, batch size 32, best-checkpoint saved
+```
 
-1. **Set up the RPLIDAR A1:** Follow the manufacturer's instructions to connect the LiDAR to your system.
-2. **Prepare the Arduino:** Upload the provided scripts to control the LiDAR and motor system.
-3. **Assemble the Robot:** Integrate all components and sensors,
+After training, the Keras model is exported to `model.tflite` and converted to a C array (`xxd -i model.tflite > model_data.cc`) for the Arduino sketch in [`arduino/sensor_data/`](arduino/sensor_data/).
 
-### Usage
+---
 
-To start the system:
+## Results
 
-1. Power on the robot.
-2. Execute the main control script on the Arduino.
-3. The robot will begin scanning the environment and navigating autonomously, identifying objects in real-time.
+- **97% validation accuracy** (Section 6.1 of the report). Confusion matrix shows 1 bottle misclassified as cap and 1 mug as cap on the 75-sample validation set — 73/75 correct.
+- Real-time classification working end-to-end: LiDAR scan → Bluetooth → host inference → DAGU action.
 
-## Acknowledgments
+A reproduction script is provided in [`python/train_reproduce.py`](python/train_reproduce.py) — see [Reproduction notes](#reproduction-notes) below.
 
-- Gratitude to all project contributors and advisors at Imperial College London for their invaluable feedback and support.
-- Special thanks to the developers of the RPLIDAR A1 for their groundbreaking LiDAR technology.
+---
+
+## Repository structure
+
+```
+.
+├── arduino/
+│   ├── sensor_data/              # Final on-device sketch with TFLite-Micro inference
+│   │   ├── sensor_data.ino
+│   │   ├── working_blue.ino      # Bluetooth + scanning firmware
+│   │   └── tflite_model.h        # Header that pulls in model_data.cc
+│   └── ...
+├── arduino_straight.ino          # Standalone scanning sketch (no inference)
+├── python/
+│   ├── preprocessing.ipynb       # Original training notebook (reference)
+│   ├── train_reproduce.py        # CPU reproduction script
+│   ├── serial_extractor.py       # Reads LiDAR scans over serial, saves to disk
+│   ├── visualize.py              # 2D / 3D depth-image visualisation
+│   └── convert_to_tflite.py      # Keras → TFLite conversion
+├── requirements.txt
+└── dagu.png
+```
+
+The trained model artefacts (`model.tflite`, `model_data.cc`) are not committed — they exceed 25 MB and are regenerable from the notebook / script. Build them locally with `python python/convert_to_tflite.py`.
+
+---
+
+## Quick start
+
+### Train (CPU)
+
+```bash
+git clone https://github.com/rotask/LiDAR-Object-Detection-CNN.git
+cd LiDAR-Object-Detection-CNN
+pip install -r requirements.txt
+
+# Place the dataset under ./data/  (see dataset notes below)
+python python/train_reproduce.py
+```
+
+Training on the 300-sample dataset takes ~1 minute on a modern CPU (Keras 2.15, TensorFlow 2.15).
+
+### Deploy to Arduino
+
+1. Train, then run `python python/convert_to_tflite.py` to produce `model.tflite`.
+2. Convert to a C array: `xxd -i model.tflite > arduino/sensor_data/model_data.cc`.
+3. Open `arduino/sensor_data/sensor_data.ino` in the Arduino IDE, select the Portenta H7 board, upload.
+
+### Dataset
+
+The `data/` folder is gitignored. The original 300-sample scan corpus is held with the team and not redistributed in this repository. To collect new scans, use `python/serial_extractor.py` with the rover assembled and the Arduino sketch flashed.
+
+---
+
+## Reproduction notes
+
+The committed [`preprocessing.ipynb`](python/preprocessing.ipynb) contains exploratory work with two model variants and partially-stale cells. The clean reproduction lives in [`python/train_reproduce.py`](python/train_reproduce.py), which trains the canonical 213K-parameter architecture under the report's hyperparameters and reports val accuracy + confusion matrix at the end of training.
+
+Run-to-run variance on a 75-sample validation set is significant: a difference of 2 misclassifications shifts accuracy by 2.7 percentage points. Expect 92–97% across seeds.
+
+---
+
+## Acknowledgements
+
+Coursework deliverable for **EE3-25: Applied Machine Learning** at the Department of Electrical and Electronic Engineering, Imperial College London. Supervised by the EEE faculty.
+
+The repository was forked from [`alexfrater/ASHLA`](https://github.com/alexfrater/ASHLA), the team's primary working repo. Hardware list and methodology follow the Team Ashla project report (March 2024).
+
+## License
+
+Released under the [MIT License](LICENSE).
