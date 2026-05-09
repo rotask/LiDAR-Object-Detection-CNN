@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project artefacts (regenerable; not redistributed)
+data/
+test/
+*.tflite
+*_data.cc
+arduino/sensor_data/model_data.cc
+arduino/sensor_data/tflite_model.h.bak
+
+# Saved Keras models / checkpoints
+*.h5
+*.keras
+model/
+checkpoints/
+logs/
+
+# Local serial-port scratch files
+output.txt
